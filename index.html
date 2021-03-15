@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+  <link rel="icon" href="data:," />
   <title>Chat bot</title>
 </head>
 
@@ -23,7 +23,7 @@
   }
 </style>
 <script>
-  (function () {
+  (async function () {
     function random(min, max) {
       return Math.floor(Math.random() * (max - min) + min);
     }
@@ -36,7 +36,7 @@
     const gameboardCtx = gameboardEl.getContext("2d");
 
     const params = new URLSearchParams(document.location.search.substring(1));
-    const orgName = params.get('orgName') || 'Organisation'
+    const orgName = params.get('orgName') || 'Headquarters'
 
     const chatSectionHeight = 40;
     const gameboard = {
@@ -48,7 +48,7 @@
     const visitorMessageIcon = "\uf0e5";
     const sendIcon = "\uf1d9";
     const scoreIcon = "\uf0e6";
-    const particleIcon = "\uf004";
+    const particleIcon = "\uf164";
 
     let botDx;
     const botSpeed = 5;
@@ -57,9 +57,9 @@
     let botMessages;
     const botMessagesSpeed = 5;
     let lastBotMessageAt;
-    let botMessagesPerSecond;
+    let botMessagesPerSecond = 4;
     let visitorMessages;
-    const visitorMessagesSpeed = 1;
+    let visitorMessagesSpeed;
     let visitorMessagesPerSecond;
     let lastVisitorMessageAt;
     let explosionParticles;
@@ -77,9 +77,9 @@
       keyPressed;
       botMessages = new Set();
       lastBotMessageAt = Date.now();
-      botMessagesPerSecond = 1;
       visitorMessages = new Set();
-      visitorMessagesPerSecond = 0.3;
+      visitorMessagesPerSecond = 1;
+      visitorMessagesSpeed = 0.3;
       lastVisitorMessageAt = Date.now() - 1500;
       explosionParticles = new Set()
       isStarted = false;
@@ -230,9 +230,13 @@
 
     function updateScore() {
       score += 1;
-      if (score % 5 === 0) {
-        visitorMessagesPerSecond += 0.1;
-        botMessagesPerSecond += 0.1
+      if (score % 10 === 0) {
+        if (visitorMessagesPerSecond < 2.5) {
+          visitorMessagesPerSecond += 0.05;
+        }
+        if (visitorMessagesSpeed < 0.7) {
+          visitorMessagesSpeed += 0.05;
+        }
       }
     }
 
@@ -272,7 +276,7 @@
       }
       particle.x += particle.dx;
       particle.y += particle.dy;
-      gameboardCtx.font = '6px FontAwesome';
+      gameboardCtx.font = '8px FontAwesome';
       gameboardCtx.fillStyle = "black";
       gameboardCtx.save()
       gameboardCtx.globalAlpha = particle.alpha;
@@ -297,6 +301,8 @@
     }
 
     function drawStartChat() {
+      drawChatSection();
+
       const startChatMessages = [
         { from: orgName, text: "Hey, li'l bot!", x: 10, y: 10 },
         { from: 'bot', text: 'What\'s up?', x: gameboard.width - 100, y: 70 },
@@ -312,22 +318,24 @@
     }
 
     function getScoreMessage() {
-      if (score < 20) {
+      if (score < 50) {
         return 'You can do better!'
       }
-      if (score < 40) {
+      if (score < 150) {
         return 'Not bad!'
       }
-      if (score < 80) {
+      if (score < 300) {
         return 'Great work!'
       }
-      if (score < 160) {
+      if (score < 600) {
         return 'Awesome!'
       }
       return 'Impossible!'
     }
 
     function drawEndChat() {
+      drawChatSection();
+
       const startChatMessages = [
         { from: orgName, text: `You answered ${score} messages`, x: 10, y: 10 },
         { from: '', text: getScoreMessage(), x: 10, y: 50 },
@@ -339,9 +347,12 @@
       init();
     }
 
+    const font = new FontFace('FontAwesome', 'url("https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/fonts/fontawesome-webfont.woff2?v=4.7.0")');
+    await font.load()
+    document.fonts.add(font);
+
     clearBoard();
     init();
-    drawChatSection();
     drawStartChat();
   })(document)
 </script>

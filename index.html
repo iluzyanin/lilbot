@@ -9,7 +9,7 @@
   </head>
 
   <body>
-    <canvas id="gameboard" width="400" height="600"></canvas>
+    <canvas id="gameboard"></canvas>
   </body>
   <style>
     #gameboard {
@@ -17,32 +17,26 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      border: 1px solid #999;
-      border-radius: 4px;
-      height: 100vh;
     }
   </style>
   <script>
-    (async function () {
-      function random(min, max) {
-        return Math.floor(Math.random() * (max - min) + min);
-      }
+    function random(min, max) {
+      return Math.floor(Math.random() * (max - min) + min);
+    }
 
-      function randomSign() {
-        return Math.random() - 0.5 > 0 ? -1 : 1;
-      }
+    function randomSign() {
+      return Math.random() - 0.5 > 0 ? -1 : 1;
+    }
 
+    (async function (document, window) {
       const gameboardEl = document.getElementById("gameboard");
       const gameboardCtx = gameboardEl.getContext("2d");
 
       const params = new URLSearchParams(document.location.search.substring(1));
       const orgName = params.get("orgName") || "Headquarters";
+      const botName = params.get("botName") || "bot";
 
       const chatSectionHeight = 40;
-      const gameboard = {
-        width: gameboardEl.width,
-        height: gameboardEl.height - chatSectionHeight,
-      };
       const botIcon = "\uf215";
       const botMessageIcon = "\uf075";
       const visitorMessageIcon = "\uf0e5";
@@ -50,6 +44,7 @@
       const scoreIcon = "\uf0e6";
       const particleIcon = "\uf164";
 
+      let gameboard;
       let botDx;
       const botSpeed = 5;
       let botPos;
@@ -57,7 +52,7 @@
       let botMessages;
       const botMessagesSpeed = 5;
       let lastBotMessageAt;
-      let botMessagesPerSecond = 4;
+      let botMessagesPerSecond = 1.5;
       let visitorMessages;
       let visitorMessagesSpeed;
       let visitorMessagesPerSecond;
@@ -92,6 +87,7 @@
         drawChatSection();
         drawScore();
         drawBot();
+        sendBotMessage();
         drawBotMessages();
         drawVisitorMessages();
         drawExplosionParticles();
@@ -113,9 +109,6 @@
         if (event.code === "ArrowRight") {
           keyPressed = event.code;
           botDx = botSpeed;
-        }
-        if (event.code === "Space") {
-          sendBotMessage();
         }
       }
 
@@ -158,8 +151,8 @@
       function drawChatSection() {
         gameboardCtx.strokeStyle = "#999";
         gameboardCtx.lineJoin = "round";
-        gameboardCtx.strokeRect(5, gameboard.height, gameboard.width - 10, chatSectionHeight - 5);
-        drawIcon(sendIcon, gameboard.width - 30, gameboard.height + 12, "#999");
+        gameboardCtx.strokeRect(5, gameboard.height, gameboard.width - 10, chatSectionHeight - 10);
+        drawIcon(sendIcon, gameboard.width - 30, gameboard.height + 8, "#999");
       }
 
       function sendBotMessage() {
@@ -224,8 +217,11 @@
           if (visitorMessagesPerSecond < 2.5) {
             visitorMessagesPerSecond += 0.05;
           }
-          if (visitorMessagesSpeed < 0.7) {
+          if (visitorMessagesSpeed < 1) {
             visitorMessagesSpeed += 0.05;
+          }
+          if (botMessagesPerSecond < 3) {
+            botMessagesPerSecond += 0.05;
           }
         }
       }
@@ -274,37 +270,44 @@
         gameboardCtx.restore();
       }
 
-      function drawStartChatMessage({ from, text, x, y }) {
+      function drawChatMessages(chatMessages) {
+        chatMessages.forEach((message, i) =>
+          setTimeout(() => {
+            if (!isStarted) {
+              drawChatMessage(message);
+            }
+          }, i * 1500)
+        );
+      }
+
+      function drawChatMessage({ from, text, y, isLeft }) {
+        const indent = 10;
         gameboardCtx.fillStyle = "black";
         gameboardCtx.font = "600 10px monospace";
-        gameboardCtx.fillText(from, from === "bot" ? gameboard.width - 30 : x, y + 8);
+        const fromMeasure = gameboardCtx.measureText(from)
+        gameboardCtx.fillText(from, isLeft ? indent : gameboard.width - fromMeasure.width - indent, y + fromMeasure.actualBoundingBoxAscent);
         gameboardCtx.strokeStyle = "#999";
         gameboardCtx.lineJoin = "round";
-        gameboardCtx.strokeRect(x, y + 12, text.length * 8 + 10, 35);
         gameboardCtx.font = "12px monospace";
-        gameboardCtx.fillText(text, x + 10, y + 33);
+        const textMeasure = gameboardCtx.measureText(text)
+        gameboardCtx.fillText(
+          text,
+          isLeft ? indent * 2 : gameboard.width - textMeasure.width - indent * 2,
+          y + textMeasure.actualBoundingBoxAscent + indent * 2 + 4);
+        gameboardCtx.strokeRect(isLeft ? indent : gameboard.width - textMeasure.width - 30, y + 12, textMeasure.width + 20, 35);
       }
 
       function drawStartChat() {
         drawChatSection();
 
         const startChatMessages = [
-          { from: orgName, text: "Hey, li'l bot!", x: 10, y: 10 },
-          { from: "bot", text: "What's up?", x: gameboard.width - 100, y: 70 },
-          { from: orgName, text: "We need help answering messages!", x: 10, y: 130 },
-          { from: "bot", text: "What should I do?", x: gameboard.width - 155, y: 200 },
-          { from: orgName, text: "Use arrow keys to move", x: 10, y: 260 },
-          { from: "", text: "space to send messages", x: 10, y: 300 },
-          { from: "bot", text: "Got it!", x: gameboard.width - 75, y: 360 },
-          { from: orgName, text: "Press any key when ready!", x: 10, y: 420 },
+          { from: orgName, text: `Hey, ${botName}!`, y: 10, isLeft: true },
+          { from: botName, text: "What's up?", y: 70 },
+          { from: orgName, text: "We need help answering messages!", y: 130, isLeft: true },
+          { from: botName, text: "Sure thing!", y: 200 },
+          { from: orgName, text: "Press any key when ready!", y: 260, isLeft: true },
         ];
-        startChatMessages.forEach((message, i) =>
-          setTimeout(() => {
-            if (!isStarted) {
-              drawStartChatMessage(message);
-            }
-          }, i * 1500)
-        );
+        drawChatMessages(startChatMessages);
       }
 
       function getScoreMessage() {
@@ -326,19 +329,13 @@
       function drawEndChat() {
         drawChatSection();
 
-        const startChatMessages = [
-          { from: orgName, text: `You answered ${score} messages`, x: 10, y: 10 },
-          { from: "", text: getScoreMessage(), x: 10, y: 50 },
-          { from: "bot", text: "Got it!", x: gameboard.width - 75, y: 110 },
-          { from: orgName, text: "Press any key to play again!", x: 10, y: 170 },
+        const endChatMessages = [
+          { from: orgName, text: `You answered ${score} messages`, y: 10, isLeft: true },
+          { from: "", text: getScoreMessage(), y: 50, isLeft: true },
+          { from: botName, text: "Got it!", y: 110 },
+          { from: orgName, text: "Press any key to play again!", y: 170, isLeft: true },
         ];
-        startChatMessages.forEach((message, i) =>
-          setTimeout(() => {
-            if (!isStarted) {
-              drawStartChatMessage(message);
-            }
-          }, i * 1500)
-        );
+        drawChatMessages(endChatMessages);
         init();
       }
 
@@ -349,9 +346,19 @@
       await font.load();
       document.fonts.add(font);
 
-      clearBoard();
-      init();
-      drawStartChat();
-    })(document);
+      const resize = (e) => {
+        gameboardEl.height = Math.max(window.innerHeight, 600);
+        gameboardEl.width = Math.min(window.innerWidth, 580);
+        gameboard = {
+          width: gameboardEl.width,
+          height: gameboardEl.height - chatSectionHeight,
+        };
+        clearBoard();
+        init();
+        drawStartChat();
+      }
+      window.addEventListener('resize', resize);
+      resize()
+    })(document, window);
   </script>
 </html>

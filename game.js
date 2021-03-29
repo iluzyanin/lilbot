@@ -334,7 +334,7 @@ function randomSign() {
 
   const font = new FontFace(
     "FontAwesome",
-    'url("https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/fonts/fontawesome-webfont.woff2?v=4.5.0")'
+    'url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.5.0/fonts/fontawesome-webfont.woff2?v=4.5.0")'
   );
   await font.load();
   document.fonts.add(font);

@@ -45,11 +45,15 @@ function randomSign() {
   document.addEventListener("keyup", handleKeyUp);
 
   function init() {
+    gameboard = {
+      width: gameboardEl.width,
+      height: gameboardEl.height - chatSectionHeight,
+    };
     botDx = 0;
     botPos = { x: gameboard.width / 2 - 10, y: gameboard.height - 16 };
     keyPressed;
     botMessages = new Set();
-    botMessagesPerSecond = 1.5;
+    botMessagesPerSecond = 1.1;
     lastBotMessageAt = Date.now();
     visitorMessages = new Set();
     visitorMessagesPerSecond = 1;
@@ -200,7 +204,7 @@ function randomSign() {
         visitorMessagesSpeed += 0.05;
       }
       if (botMessagesPerSecond < 3) {
-        botMessagesPerSecond += 0.05;
+        botMessagesPerSecond += 0.1;
       }
     }
   }
@@ -250,7 +254,6 @@ function randomSign() {
   }
 
   function drawChatMessages(chatMessages) {
-    console.log("start!", chatMessages);
     chatMessages.forEach((message, i) =>
       setTimeout(() => {
         if (!isStarted) {
@@ -331,21 +334,27 @@ function randomSign() {
 
   const font = new FontFace(
     "FontAwesome",
-    'url("https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/fonts/fontawesome-webfont.woff2?v=4.7.0")'
+    'url("https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/fonts/fontawesome-webfont.woff2?v=4.5.0")'
   );
   await font.load();
   document.fonts.add(font);
 
+  let resizeTimeout;
   const resize = () => {
-    gameboardEl.height = Math.max(window.innerHeight, 600);
-    gameboardEl.width = Math.min(window.innerWidth, 580);
-    gameboard = {
-      width: gameboardEl.width,
-      height: gameboardEl.height - chatSectionHeight,
-    };
-    clearBoard();
-    init();
-    drawStartChat();
+    if (resizeTimeout) {
+      window.clearTimeout(resizeTimeout);
+    }
+
+    resizeTimeout = setTimeout(() => {
+      isOver = true;
+      setTimeout(() => {
+        gameboardEl.height = Math.max(window.innerHeight, 600);
+        gameboardEl.width = Math.min(window.innerWidth, 580);
+        init();
+        clearBoard();
+        drawStartChat();
+      }, 50);
+    }, 500);
   };
   window.addEventListener("resize", resize);
   resize();
